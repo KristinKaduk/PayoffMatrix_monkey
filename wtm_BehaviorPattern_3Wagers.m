@@ -1,4 +1,4 @@
-function [Out] = wtm_BehaviorWagerPattern(step)
+function [Out] = wtm_BehaviorPattern_3Wagers(step)
 %createbehavior patterns to wager
 
 if nargin < 1
@@ -8,17 +8,21 @@ end
 %% create all possible behavior patterns to wager using a step size
 wp  = ig_nchoosek_with_rep_perm([0:step:1],3);
 wp = wp(sum(wp,2)==1,:);
-
 n_wp = size(wp,1);
-
 wp_c = wp;
 wp_i = wp;
-
 cwp = combvec(wp_c',wp_i')';
-
 Out.nb_wagerPattern = size(cwp,1);
-
 cwp = reshape(cwp,Out.nb_wagerPattern,3,2);
+% step         = 0.25;
+% options      = 0:step:1;
+% Combinations = CombVec(options, options, options);
+% wp_c = Combinations(:,sum(Combinations,1)==1);
+% wp_i = Combinations(:,sum(Combinations,1)==1);
+% cwp = CombVec(wp_c,wp_i)';
+% N_comb = size(cwp,1);
+% 
+% cwp = reshape(cwp,N_comb,3,2);
 
 %% exclude the behavior pattern according to specified assumptions (Principles)
 Out.pattern = []; 

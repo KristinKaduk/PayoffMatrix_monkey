@@ -74,9 +74,6 @@ EVw = Perf*Utility_PayOff(1,:) + (1-Perf)*Utility_PayOff(2,:); % EV per wager gi
 % possible payoff-matrix combinations based on principles
 % the pattern with the highest earning 
 % set pinciples for the payoff matrix
-
-
-
 %% behavior patterns for three wagers  &  principles
 % Create all possible behavior pattern for three wagers
 % sort the generated wagering patterns based on rules

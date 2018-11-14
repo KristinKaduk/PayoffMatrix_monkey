@@ -36,24 +36,9 @@ Time_PayOff                   = abs( Time_PayOff);
 Coefficient     =    0.235;
 PayOff_RW       =	 wtm_ConvertTimeOut2Reward(PayOff,Coefficient);
 %% different behavior strategies & their principles
-Allbehavioral_pattern = {...
-    'random_uniform_wagering',...
-    'NoMetacognition',...
-    'UncertainOption',...
-    'Certainty_Correct', ...
-    'bidirectionalMetacognition'};
+step = 0.25; 
+wtm_BehaviorWagerPattern(step)
 
-%%% Create all possible combination related to one behavior strategy
-step         = 0.25;
-options      = 0:step:1;
-Combinations = combvec(options, options, options);
-wp_c = Combinations(:,sum(Combinations,1)==1);
-wp_i = Combinations(:,sum(Combinations,1)==1);
-cwp = combvec(wp_c,wp_i)';
-N_comb = size(cwp,1);
-
-cwp = reshape(cwp,N_comb,3,2);
-ind = 1: length(Combinations(1,:));
 BigTable = [];    Table = [];pattern= [];
 
 
@@ -172,126 +157,7 @@ sum(Tab.Time) %2000s
 Tab.Nr_BehPattern
 
     %%
-for I_behaviors = 1:size(Allbehavioral_pattern,2)
-	behavioral_pattern = Allbehavioral_pattern{8};
-	
-	behavioral_pattern = Allbehavioral_pattern{I_behaviors};
-	switch behavioral_pattern
-		
-		case 'notRisky_bidirectionalMetacognition'
-			wager_proportions = [	0.1 0.3 0.6;
-						0.6 0.3 0.1];
-		case 'moderatelyRisky_bidirectionalMetacognition'
-			wager_proportions = [	0.1 0.2 0.7;
-						0.3 0.2 0.5];
-		case 'moderatelyRisky_bidirectionalMetacognition'
-			wager_proportions = [	0.1 0.2 0.7;
-						0.3 0.2 0.5];
-		case 'random_uniform_wagering:0.33 0.33 0.33'
-			wager_proportions = [	0.33 0.33 0.33;
-						0.33 0.33 0.33];
-		case 'absolutelyRisky_NoMetacognition: 0 0 1'
-			wager_proportions = [	0 0 1;
-						0 0 1];
-		case 'UncertainOption_NoMetacognition: 0 1 0'
-			wager_proportions = [	0 1 0;
-						0 1 0];
-		case 'Certainty_Correct'
-			for i_Diff = 1: size(perf,2)
-				
-				wager_proportions = [	0 0.2 0.8;
-							0 0.5 0.5];
-			end
-		case 'Certainty_Correct_perf'
-			wager_proportions = [	0 (1-AvPerf) AvPerf;
-						0 AvPerf (1-AvPerf)/2];
-		case 'moderatelyRisky_NoMetacognition'
-			wager_proportions = [	0 0.2 0.8;
-						0 0.2 0.8];
-		case 'Following_Feedback_100'
-			wager_proportions = [	0 0 1;
-						1 0 0];
-			
-		case 'DifficultyLevel'
-			
-		case 'Certainty_Correct'
-			for i_Diff = 1: size(perf,2)
-				
-				wager_proportions{i_Diff} = [	0 (1-perf(i_Diff))	perf(i_Diff);
-								0 ((1-perf(i_Diff))/2) ((1-perf(i_Diff))/2)];
-			end
-			
-			wager_proportions{1} = [	0 (1-perf) perf;
-							0 (1-perf) perf];
-			
-			
-	end
-	
-	EVw = AvPerf*PayOff(1,:) + (1-AvPerf)*PayOff(2,:); % EV per wager given the performance
-	for i_Diff = 1: size(perf,2)
-		EVw_perDiff(i_Diff, :) = perf(i_Diff)*PayOff(1,:) + (1- perf(i_Diff))*PayOff(2,:); % EV per wager given the performance
-		Outcomes_perDiff = [
-			N_trials*perf(i_Diff)*wager_proportions(1,:).*PayOff(1,:);
-			N_trials*(1-perf(i_Diff))*wager_proportions(2,:).*PayOff(2,:)];
-		EarningsPerWager_perDiff(i_Diff, :) = sum(Outcomes_perDiff,1); % summary earnings of each of 3 wagers, given the performance and each wager frequency
-	end
-	%
-	Outcomes = [
-		N_trials*AvPerf*wager_proportions(1,:).*PayOff(1,:)
-		N_trials*(1-AvPerf)*wager_proportions(2,:).*PayOff(2,:)];
-	
-	EarningsPerWager                = sum(Outcomes,1); % summary earnings of each of 3 wagers, given the performance and each wager frequency
-	
-	Earnings                        = sum(EarningsPerWager);
-	TotalEarningsPerWager_perDiff   = sum(EarningsPerWager_perDiff);
-	TotalEarnings_perDiff           = sum(sum(EarningsPerWager_perDiff));
-	
-	% Table
-	format short g
-	T.Earnings           = Earnings;
-	T.behavioral_pattern = {behavioral_pattern};
-	T.NrTrials           = N_trials;
-	T.NeedTrials_CompensateNoMetacognition           = N_trials;
-	T.payoff_correct     = {num2str(PayOff(1,:))};
-	T.payoff_incorrect   = {num2str(PayOff(2,:))};
-	T.EVw                =  {num2str(EVw)};
-	
-	T.EarningsPerWager   = {num2str(round(EarningsPerWager,2))};
-	T.Perf               = perf;
-	T.NrTrials           = N_trials;
-	T.wagerProportions_behavioral_pattern1 = wager_proportions(1,:);
-	T.wagerProportions_behavioral_pattern2 = wager_proportions(2,:);
-	
-	Row = struct2table(T);
-	Table = [Table; Row];
-	
-	T_Diff = [];
-	
-	for i_Diff = 1: size(perf,2)
-		% cDiff = 5 +i_Diff;
-		cDiff= i_Diff
-		T_Diff(cDiff).DifLEvel               = i_Diff;
-		T_Diff(cDiff).Perf                   = perf(i_Diff);
-		T_Diff(cDiff).behavioral_pattern     = {behavioral_pattern};
-		T_Diff(1).Earnings                   = Earnings;
-		T_Diff(cDiff).wagerProportions_Correct                = wager_proportions(1,:);
-		T_Diff(cDiff).wagerProportions_Incorrect              = wager_proportions(2,:);
-		T_Diff(cDiff).EVw_perDiff                =  {num2str(EVw_perDiff(i_Diff, :))}; %!!!
-		T_Diff(cDiff).EarningsPerWager_perDiff   = EarningsPerWager_perDiff(i_Diff, :);
-		T_Diff(cDiff).EarningsPerWager           = TotalEarningsPerWager_perDiff;
-		T_Diff(1).NrTrials                       = N_trials;
-		
-		T_Diff(cDiff).payoff_correct     = {num2str(PayOff(1,:))};
-		T_Diff(cDiff).payoff_incorrect   = {num2str(PayOff(2,:))};
-		T_Diff(cDiff).NeedTrials_CompensateNoMetacognition    = N_trials;
-	end
-	
-	T_DiffRow = struct2table(T_Diff);
-	Table_Diff = [Table_Diff; T_DiffRow];
-	
-	% sort the behavioral strategz according to it's Earnings
-	
-end
+
 
 % How many trials are need to have the same outcome as the strategy with the highest earnings
 for I_behaviors = 1:      size(Allbehavioral_pattern,2)
