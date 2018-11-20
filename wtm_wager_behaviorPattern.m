@@ -6,22 +6,28 @@ Perf        = 0.75;
 N_trials    = 100;
 % defined in ml & time
 PayOff =	[0  2  5; % correct
-            3  1  -20]; % incorrect
-PayOff_RW_Time =	[0/0.1  0.2/0.1  0.5/0.1; % correct
-                    0.3/0.1  0.1/0.1  0.001/10]; % incorrect
+            3  1  -15]; % incorrect
+PayOff =	[0 0.2  0.5; % correct
+            0.3  0.1  -10]; % incorrect
+
+                
 %         PayOff =	[0  0.2  0.5; % correct
 %             0.3  0.1  -15]; % incorrect
 %% transformation of the payoff-matrix
 %GAIN
 Gain_PayOff                   = PayOff;
-Gain_PayOff(Gain_PayOff<0)    = 0;
+Gain_PayOff(Gain_PayOff<0)    = 0.01;
 %TIME/Loss
-Time_perTrial                 = 5; %s % each trial has an average time to be completed
+Time_perTrial                 = 4; %s % each trial has an average time to be completed
 Time_PayOff                   = PayOff;
 Time_PayOff(1,PayOff(1,:)>= 0)  = Time_perTrial;
 Time_PayOff(2,PayOff(2,:)>=0) = Time_perTrial;
 Time_PayOff                   = abs( Time_PayOff);
 
+GainByTimePayoff = Gain_PayOff./Time_PayOff; 
+%% Display the GainByTimePayoff .. relationship
+
+%%
 % convertion from Time into units of Reward to calculate Utility
 % IK: better to convert before the Power-function
 % ex. 1Rw -> 5s;
@@ -30,24 +36,24 @@ Coefficient     =    0.235;
 PayOff_RW       =	 wtm_ConvertTimeOut2Reward(PayOff,Coefficient);
 
 %% How to estimate this coefficients?
-R = [1, 1.5, 1.5]; %gains
-T = [1, 1, 0.5];
+R_gain = [1.5]; %gains
+R_loss = [0.5];
 % risk seeking
 S = 0.9  ;
 
 Coefficient    =   2.25; %equalize utility PayOff_RW2(2,3)= -45;
 PayOff_RW2     = wtm_ConvertTimeOut2Reward(PayOff,Coefficient);  
-Utility_PayOff = wtm_utility( PayOff_RW2,[R(3),T(3),S] );
+Utility_PayOff = wtm_utility( PayOff_RW2,[R_gain(1),R_loss(1),S] );
 Utility_PayOff = round2(Utility_PayOff,0.1); 
 
 if Plotting
     for indR = 1: 3 %length(R)
-        Utility_PayOff = wtm_utility( PayOff_RW,[R(indR),T(indR),S] );
+        Utility_PayOff = wtm_utility( PayOff_RW,[R_gain(indR),R_loss(indR),S] );
         % plot a utility function from -10 to 10  & mark the points of the
         % PayoffMatrix
         figure(1)
         Value = -8:0.1:8;
-        utility = wtm_utility( Value,[R(indR),T(indR),S] );
+        utility = wtm_utility( Value,[R_gain(indR),R_loss(indR),S] );
         plot(real(Value),utility,'k.-', 'MarkerSize',10); hold on;
         plot(real(PayOff_RW),real(Utility_PayOff),'b.', 'MarkerSize',25); hold on;
         line( [ min(Value) max(Value)],[0 0],'Color','black','LineStyle','--')
@@ -56,8 +62,8 @@ if Plotting
         ylabel('utility','fontsize',20,'fontweight','b' );
         xlabel('value','fontsize',20,'fontweight','b' );
     end
-    text(min(Value)+1,max(Value)-2,['R = ',num2str(R(indR)) ])
-    text(min(Value)+1,max(Value)-4,['T = ',num2str(T(indR)) ])
+    text(min(Value)+1,max(Value)-2,['R_gain = ',num2str(R_gain(indR)) ])
+    text(min(Value)+1,max(Value)-4,['R_loss = ',num2str(R_loss(indR)) ])
     text(min(Value)+1,max(Value)-6,['S = ',num2str(S) ])
 end
 
