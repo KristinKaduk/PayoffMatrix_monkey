@@ -1,3 +1,5 @@
+Visulize_ParameterForUtilityFunction
+
 R_gain = [1.5]; %gains
 R_loss = [0.5];
 % risk seeking

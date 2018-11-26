@@ -11,7 +11,7 @@ wp = wp(sum(wp,2)==1,:);
 n_wp = size(wp,1);
 wp_c = wp;
 wp_i = wp;
-cwp = combvec(wp_c',wp_i')';
+cwp = combvec(wp_c',wp_i')'; % the six value for correct and incorrect proportions
 Out.nb_wagerPattern = size(cwp,1);
 cwp = reshape(cwp,Out.nb_wagerPattern,3,2);
 % step         = 0.25;
@@ -64,14 +64,19 @@ for k = 1:Out.nb_wagerPattern,
 	switch Out.pattern{k}
 		
 		case 'certainty correct'
-			fignum = 1;
+			Out.PatternKategoryNr(k) = 1; 
+            fignum = 1;
 		case 'certainty incorrect'
-			fignum = 2;
+			Out.PatternKategoryNr(k) = 2; 
+            fignum = 2;
 		case 'bidirectional certainty'
+            Out.PatternKategoryNr(k) = 3; 
 			fignum = 3;
 		case 'weird pattern'
+            Out.PatternKategoryNr(k) = 4; 
 			fignum = 4;
 		case 'no metacognition'
+            Out.PatternKategoryNr(k) = 5; 
 			fignum = 5;
 			
 	end

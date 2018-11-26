@@ -4,11 +4,12 @@ Plotting =0;
 %% Measurable | imposed by experimenter:
 Perf        = 0.75;
 N_trials    = 100;
-% defined in ml & time
+% define in drops
 PayOff =	[0  2  5; % correct
-            3  1  -15]; % incorrect
-PayOff =	[0 0.2  0.5; % correct
-            0.3  0.1  -10]; % incorrect
+            3  1  -5]; % incorrect
+% defined in ml & time
+% PayOff =	[0 0.2  0.5; % correct
+%             0.3  0.1  -10]; % incorrect
 
                 
 %         PayOff =	[0  0.2  0.5; % correct
@@ -16,61 +17,61 @@ PayOff =	[0 0.2  0.5; % correct
 %% transformation of the payoff-matrix
 %GAIN
 Gain_PayOff                   = PayOff;
-Gain_PayOff(Gain_PayOff<0)    = 0.01;
+%Gain_PayOff(Gain_PayOff<0)    = 0.001;
 %TIME/Loss
 Time_perTrial                 = 4; %s % each trial has an average time to be completed
 Time_PayOff                   = PayOff;
 Time_PayOff(1,PayOff(1,:)>= 0)  = Time_perTrial;
 Time_PayOff(2,PayOff(2,:)>=0) = Time_perTrial;
+Time_PayOff(2,PayOff(2,:)<0) = abs(Time_PayOff(2,PayOff(2,:)<0)) + Time_perTrial; 
 Time_PayOff                   = abs( Time_PayOff);
 
+% Reward/Time
 GainByTimePayoff = Gain_PayOff./Time_PayOff; 
-%% Display the GainByTimePayoff .. relationship
-
-%%
-% convertion from Time into units of Reward to calculate Utility
+%% convertion from Time into units of Reward to calculate Utility
 % IK: better to convert before the Power-function
 % ex. 1Rw -> 5s;
-% !!
-Coefficient     =    0.235;
-PayOff_RW       =	 wtm_ConvertTimeOut2Reward(PayOff,Coefficient);
-
-%% How to estimate this coefficients?
+Coefficient    = 0.235; %equalize %by 30s timeout
+PayOff_RW      = wtm_ConvertTimeOut2Reward(PayOff,Coefficient);
+Coefficient    = 2.25; %equalize utility PayOff_RW2(2,3)= -45;
+PayOff_RW2     = wtm_ConvertTimeOut2Reward(PayOff,Coefficient);  
+%% UTILITY FUNCTION ... 
+% How to estimate the following coefficients?
 R_gain = [1.5]; %gains
 R_loss = [0.5];
 % risk seeking
 S = 0.9  ;
 
-Coefficient    =   2.25; %equalize utility PayOff_RW2(2,3)= -45;
-PayOff_RW2     = wtm_ConvertTimeOut2Reward(PayOff,Coefficient);  
-Utility_PayOff = wtm_utility( PayOff_RW2,[R_gain(1),R_loss(1),S] );
+Utility_GainByTimePayoff = wtm_utility( GainByTimePayoff,[R_gain(1),R_loss(1),S] );
+Utility_PayOff = wtm_utility( Gain_PayOff,[R_gain(1),R_loss(1),S] );
 Utility_PayOff = round2(Utility_PayOff,0.1); 
 
+%% Plot the different Payoff-matrixes on the utility function with the given parameters
 if Plotting
-    for indR = 1: 3 %length(R)
-        Utility_PayOff = wtm_utility( PayOff_RW,[R_gain(indR),R_loss(indR),S] );
-        % plot a utility function from -10 to 10  & mark the points of the
-        % PayoffMatrix
         figure(1)
         Value = -8:0.1:8;
-        utility = wtm_utility( Value,[R_gain(indR),R_loss(indR),S] );
-        plot(real(Value),utility,'k.-', 'MarkerSize',10); hold on;
-        plot(real(PayOff_RW),real(Utility_PayOff),'b.', 'MarkerSize',25); hold on;
+        utility = wtm_utility( Value,[R_gain,R_loss,S] );
+        plot(real(Value),utility,'k-', 'MarkerSize',10); hold on;
+        plot(real(Gain_PayOff),real(Utility_PayOff),'b.', 'MarkerSize',15); hold on;
+        
+        %plot(real(GainByTimePayoff),real(Utility_GainByTimePayoff),'r.', 'MarkerSize',15); hold on;
+
         line( [ min(Value) max(Value)],[0 0],'Color','black','LineStyle','--')
         line( [0 0],[min(utility)  max(utility)],'Color','black','LineStyle','--')
-        title('Utility function with defined parameters: R, S & T')
-        ylabel('utility','fontsize',20,'fontweight','b' );
-        xlabel('value','fontsize',20,'fontweight','b' );
-    end
-    text(min(Value)+1,max(Value)-2,['R_gain = ',num2str(R_gain(indR)) ])
-    text(min(Value)+1,max(Value)-4,['R_loss = ',num2str(R_loss(indR)) ])
+        %title('Utility function with defined parameters: R, S & T')
+        ylabel('Utility (utils)','fontsize',20,'fontweight','b' );
+        xlabel('reward magnitude (drops)','fontsize',20,'fontweight','b' );
+    text(min(Value)+1,max(Value)-2,['R gain = ',num2str(R_gain)])
+    text(min(Value)+1,max(Value)-4,['R loss = ',num2str(R_loss)])
     text(min(Value)+1,max(Value)-6,['S = ',num2str(S) ])
 end
 
 
 %% expected Value for each Wager
 EVw_RW = Perf*PayOff_RW(1,:) + (1-Perf)*PayOff_RW(2,:); % EV per wager given the performance
+EVw_GainByTime = Perf*GainByTimePayoff(1,:) + (1-Perf)*GainByTimePayoff(2,:); % EV per wager given the performance
 EVw = Perf*Utility_PayOff(1,:) + (1-Perf)*Utility_PayOff(2,:); % EV per wager given the performance
+
 %% Optimization: max(Reward) & min(Costs) -> utility
 %% behavior patterns for three wagers  &  principles
 % Create all possible behavior pattern for three wagers
@@ -107,13 +108,31 @@ for i_pattern = 1:Out.nb_wagerPattern,
         N_trials*(1-Perf)   *Out.wagerIncorrect(i_pattern,:) .*PayOff_RW(2,:)];
     T.EarningsDrops        = sum(sum(DropsOutcomes,1));
     
-    T.payoff_correct        = {num2str(PayOff(1,:))};
-    T.payoff_incorrect      = {num2str(PayOff(2,:))};
-    T.PayOff_RW_correct        = {num2str(PayOff_RW(1,:))};
-    T.PayOff_RW_incorrect      = {num2str(PayOff_RW(2,:))};
+    
+    T.payoff_correct                = {num2str(PayOff(1,:))};
+    T.payoff_incorrect              = {num2str(PayOff(2,:))};
+    T.PayOff_RW_correct             = {num2str(PayOff_RW(1,:))};
+    T.PayOff_RW_incorrect           = {num2str(PayOff_RW(2,:))};
     T.PayOff_Utility_correct        = {num2str(Utility_PayOff(1,:))};
     T.PayOff_Utility_incorrect      = {num2str(Utility_PayOff(2,:))};
     
+    
+    %% meta-D calculations
+    % !!! Download FUNCTION type2_SDT_SSE 
+    %n_wagers*2 values in a vector -> 
+    % ordered... nR_S1(correct, incorrect) && nR_S2(incorrect, correct) 
+    % highest conf "S1" ... lowest conf "S1", lowest conf "S2", ... highest conf "S2"
+    % original order 1 2 3
+    nR_S1    = [flip(T.wagerProportions_correct), T.wagerProportions_wrong]*(N_trials*Perf); % highest conf "S1" ... lowest conf "S1"
+    nR_S2    = [flip(T.wagerProportions_wrong),T.wagerProportions_correct]*(N_trials*(1-Perf)); %lowest conf "S2", ... highest conf "S2"
+    
+    out      = type2_SDT_SSE(nR_S1, nR_S2);
+    T.metaD  = out.meta_da ; 
+    T.Dprime = out.da ; 
+    
+    %%
+    T.PatternKategoryNr = Out.PatternKategoryNr(i_pattern);
+
     T.behavioral_pattern = {Out.pattern{i_pattern}};
     T.Nr_BehPattern      = i_pattern;
     Row = struct2table(T);
@@ -122,10 +141,27 @@ for i_pattern = 1:Out.nb_wagerPattern,
     
 end
 
+%% save Table
+writetable(Table,'Y:\Projects\Wagering_monkey\Data\PayoffMatrix\Table_BehaviorPattern_Earnings.txt', 'Delimiter', ',')
+path_save = 'Y:\Projects\Wagering_monkey\Data\PayoffMatrix\';
+cd(path_save)
+copyfile('Table_BehaviorPattern_Earnings.txt','Table_BehaviorPattern_Earnings.m');
+save([path_save, 'Table_BehaviorPattern_Earnings' ],'Table');
 
+% path_save = 'Y:\Projects\Wagering_monkey\Data\PayoffMatrix\';
+% dir(path_save)
+% load( [path_save, 'Table_BehaviorPattern_Earnings.m']);
+% 
+% Data = importdata('Table_BehaviorPattern_Earnings.txt') %loads data into array A.
+% filename = 'Table_BehaviorPattern_Earnings.txt';
+% delimiterIn = ' ';
+% headerlinesIn = 1;
+% importdata(filename,delimiterIn,headerlinesIn);
+
+%%
 %Table = sortrows(Table,'EarningsUtility');
 %Table = sortrows(Table,'behavioral_pattern');
-Table = sortrows(Table,{'behavioral_pattern', 'EarningsUtility'});
+Table = sortrows(Table,{'PatternKategoryNr', 'EarningsUtility'});
 Table.Nr_BehPattern(:) = 1:length(Table.EarningsUtility)';
 
 
@@ -142,9 +178,14 @@ end
 
 
 %% 1. What is the optimal wager pattern (max earnings)?
-Table(Table.EarningsUtility == max(Table.EarningsUtility),:); % bidrectional certainty - 100% follow the feedback
+Table(Table.EarningsUtility == max(Table.EarningsUtility),:) % bidrectional certainty - 100% follow the feedback
 %% 2. To which wagering category it belong?
 Table.behavioral_pattern(Table.EarningsUtility == max(Table.EarningsUtility))
+%% 3. Meta-D for the optimal wager pattern given the payoff-matrix
+Table.metaD(Table.EarningsUtility == max(Table.EarningsUtility))
+max(Table.metaD)
+%% 4.%%  What is the optimal wager pattern (max metaD)?
+Table(Table.metaD == max(Table.metaD),:) %
 %% 3. How different it is from the rest in time, reward, utils?
 % Graphs - all possible behavior pattern for the three wager & their earning
 figure(2)
@@ -183,12 +224,13 @@ set(gca, 'box', 'off');
 legend(b, {'wager1', 'wager2', 'wager3'})
 
 ax1 = subplot(3,1,3);
-b = bar(Table.wagerProportions_wrong, 'groups') ;
+b = bar(Table.wagerProportions_wrong, 'Stacked') ;
 ylabel('Nr. of Trials (incorrect)','fontsize',15,'fontweight','b' );
 set(gca, 'box', 'off');
 legend(b, {'wager1', 'wager2', 'wager3'})
-%% Graph: show the be.pattern of each category
+%% Graph: show the be.pattern with the highest earnings of each category
 % IGORS PLOT!!!
+
 
 %% Graph: maximum Earnings in utils for the winning be.pattern of each category
 WagerCategories = unique(Table.behavioral_pattern); 
