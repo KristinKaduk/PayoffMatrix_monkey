@@ -49,10 +49,10 @@ Utility_PayOff = round2(Utility_PayOff,0.1);
 %% Plot the different Payoff-matrixes on the utility function with the given parameters
 if Plotting
         figure(1)
-        Value = -8:0.1:8;
+        Value = -6:0.1:6;
         utility = wtm_utility( Value,[R_gain,R_loss,S] );
         plot(real(Value),utility,'k-', 'MarkerSize',10); hold on;
-        plot(real(Gain_PayOff),real(Utility_PayOff),'b.', 'MarkerSize',15); hold on;
+        plot(real(Gain_PayOff),real(Utility_PayOff),'b.', 'MarkerSize',30); hold on;
         
         %plot(real(GainByTimePayoff),real(Utility_GainByTimePayoff),'r.', 'MarkerSize',15); hold on;
 
@@ -60,10 +60,12 @@ if Plotting
         line( [0 0],[min(utility)  max(utility)],'Color','black','LineStyle','--')
         %title('Utility function with defined parameters: R, S & T')
         ylabel('Utility (utils)','fontsize',20,'fontweight','b' );
-        xlabel('reward magnitude (drops)','fontsize',20,'fontweight','b' );
-    text(min(Value)+1,max(Value)-2,['R gain = ',num2str(R_gain)])
-    text(min(Value)+1,max(Value)-4,['R loss = ',num2str(R_loss)])
-    text(min(Value)+1,max(Value)-6,['S = ',num2str(S) ])
+        xlabel('Reward magnitude (drops)','fontsize',20,'fontweight','b' );
+        xt = get(gca, 'XTick');
+        set(gca, 'FontSize', 16)
+    text(min(Value)+1,max(Value)-1,['R gain = ',num2str(R_gain)])
+    text(min(Value)+1,max(Value)-2.5,['R loss = ',num2str(R_loss)])
+    text(min(Value)+1,max(Value)-4,['S = ',num2str(S) ])
 end
 
 
